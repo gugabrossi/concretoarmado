@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Passarela de concreto armado – Modelo 3D</title>
+<style>
+:root{--bg:#eef1f4;--fg:#1d2733;--bt:#fff;--bb:#b8c0c9;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171b20;--fg:#e8edf2;--bt:#232a31;--bb:#3a444e}}
+:root[data-theme="dark"]{--bg:#171b20;--fg:#e8edf2;--bt:#232a31;--bb:#3a444e}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:Arial,Helvetica,sans-serif}
+#c{display:block;width:100%;height:100%;touch-action:none}
+#lg{position:fixed;top:calc(36px + env(safe-area-inset-top,0px));left:12px;display:flex;flex-direction:column;gap:3px;font-size:12px;pointer-events:none}
+#lg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+#t{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:12px;right:12px;font-size:13px;pointer-events:none}
+#u{position:fixed;left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+button{font:inherit;font-size:14px;padding:9px 14px;border-radius:8px;border:1px solid var(--bb);background:var(--bt);color:var(--fg)}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="t"><b>Passarela 18 × 7 m</b> · arraste para girar, role ou use pinça para dar zoom</div>
+<div id="lg"><span><i style="background:#5b9bd5"></i>Laje</span><span><i style="background:#f0a030"></i>Viga</span><span><i style="background:#e05a47"></i>Pilar</span><span><i style="background:#7e57c2"></i>Bloco</span><span><i style="background:#2e9b7a"></i>Estaca</span><span><i style="background:#b0bec5"></i>Guarda-corpo</span></div>
+<div id="u"><button data-v="0.6,0.35,30">Vista externa</button><button data-v="0.8,-0.2,21">Por baixo</button><button data-v="0,0.04,38">Frontal</button><button data-v="1.57,0.05,26">Lateral</button></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const Hp=4,T=.15,D=1;
+const c=document.getElementById('c');
+const r=new THREE.WebGLRenderer({canvas:c,antialias:true});
+const sc=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(45,1,.1,300);
+const bg=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#eef1f4';
+r.setClearColor(bg);
+sc.add(new THREE.HemisphereLight(0xffffff,0x778899,.85));
+const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(15,22,12);sc.add(dl);
+const mat=new THREE.MeshStandardMaterial({color:0xb7b7b2,roughness:.95});
+const lm=new THREE.LineBasicMaterial({color:0x555555,transparent:true,opacity:.45});
+// x ao longo dos 18 m, y na largura (vira z), z para cima (vira y)
+function B(cx,cy,cz,sx,sy,sz,mm){
+  const g=new THREE.BoxGeometry(sx,sz,sy);
+  const m=new THREE.Mesh(g,mm||mat);m.position.set(cx,cz,cy);sc.add(m);
+  const l=new THREE.LineSegments(new THREE.EdgesGeometry(g),lm);l.position.copy(m.position);sc.add(l);
+}
+const mk=c=>new THREE.MeshStandardMaterial({color:c,roughness:.8});
+const mL=mk(0x5b9bd5),mV=mk(0xf0a030),mP=mk(0xe05a47),mG=mk(0xb0bec5),mBl=mk(0x7e57c2),mE=mk(0x2e9b7a);
+const zs=Hp+D-T/2;
+B(1.755,3.5,zs,3.49,6.99,T,mL);B(9,3.5,zs,11,6.99,T,mL);B(16.245,3.5,zs,3.49,6.99,T,mL);
+const zv=Hp+D/2-.002;
+B(9,.15,zv,18,.3,D-.004,mV);B(9,6.85,zv,18,.3,D-.004,mV);
+[.1,3.5,14.5,17.9].forEach(x=>B(x,3.5,zv,.2,6.7,D-.004,mV));
+const mb=new THREE.MeshStandardMaterial({color:0x8f8f8a,roughness:.95});
+const me=new THREE.MeshStandardMaterial({color:0x6e6a60,roughness:1});
+[[3.5,.15],[14.5,.15],[3.5,6.85],[14.5,6.85]].forEach(p=>{B(p[0],p[1],Hp/2,.5,.2,Hp,mP);B(p[0],p[1],.35,1.7,.7,.7,mBl);[-.5,.5].forEach(o=>{const e=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,6,24),mE);e.position.set(p[0]+o,-3,p[1]);sc.add(e)})});
+B(9,.075,Hp+D+.55,17.98,.15,1.1,mG);B(9,6.925,Hp+D+.55,17.98,.15,1.1,mG);
+const gr=new THREE.Mesh(new THREE.PlaneGeometry(70,40),new THREE.MeshStandardMaterial({color:0x8d9a8a,roughness:1,transparent:true,opacity:.4,depthWrite:false}));
+gr.rotation.x=-Math.PI/2;gr.position.set(9,-.01,3.5);sc.add(gr);
+const tg=new THREE.Vector3(9,2.6,3.5);
+let th=.6,ph=.35,d=30;
+function up(){cam.position.set(tg.x+d*Math.cos(ph)*Math.sin(th),tg.y+d*Math.sin(ph),tg.z+d*Math.cos(ph)*Math.cos(th));cam.lookAt(tg);r.render(sc,cam)}
+function rs(){const w=c.clientWidth,h=c.clientHeight;r.setPixelRatio(Math.min(devicePixelRatio,2));r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();up()}
+addEventListener('resize',rs);
+const P=new Map();let pd=0;
+c.addEventListener('pointerdown',e=>{c.setPointerCapture(e.pointerId);P.set(e.pointerId,[e.clientX,e.clientY]);if(P.size==2){const a=[...P.values()];pd=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1])}});
+c.addEventListener('pointermove',e=>{
+  if(!P.has(e.pointerId))return;
+  const o=P.get(e.pointerId);
+  if(P.size==1){th-=(e.clientX-o[0])*.008;ph=Math.max(-.45,Math.min(1.4,ph+(e.clientY-o[1])*.006))}
+  P.set(e.pointerId,[e.clientX,e.clientY]);
+  if(P.size==2){const a=[...P.values()],n=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);d=Math.max(8,Math.min(70,d*pd/n));pd=n}
+  up()});
+const end=e=>P.delete(e.pointerId);
+c.addEventListener('pointerup',end);c.addEventListener('pointercancel',end);
+c.addEventListener('wheel',e=>{e.preventDefault();d=Math.max(8,Math.min(70,d*(1+e.deltaY*.001)));up()},{passive:false});
+document.querySelectorAll('button').forEach(b=>b.onclick=()=>{[th,ph,d]=b.dataset.v.split(',').map(Number);up()});
+rs();
+</script></body></html>
